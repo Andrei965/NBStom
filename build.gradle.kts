@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("io.github.goooler.shadow") version "8.1.8"
+    id("com.gradleup.shadow") version "9.0.0-beta15"
     `maven-publish`
     java
 }
@@ -13,11 +13,11 @@ repositories {
 
 dependencies {
 //    implementation("com.github.Minestom:Minestom:8ad2c7701f")
-    compileOnly("net.minestom:minestom-snapshots:c148954a47")
-    testImplementation("net.minestom:minestom-snapshots:461c56e749")
+    compileOnly("net.minestom:minestom-snapshots:1_21_5-c4814c2270")
+    testImplementation("net.minestom:minestom-snapshots:1_21_5-c4814c2270")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.12.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.12.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.13.1")
 }
 
 

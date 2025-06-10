@@ -4,9 +4,10 @@ import dev.emortal.nbstom.MusicDisc;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.minestom.server.component.DataComponents;
+import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
-import net.minestom.server.item.ItemComponent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 
@@ -30,22 +31,22 @@ public class MusicPlayerInventory {
         }
 
         inventory.setItemStack(40, ItemStack.builder(Material.BARRIER)
-                .set(ItemComponent.ITEM_NAME, Component.text("Stop", NamedTextColor.RED, TextDecoration.BOLD))
+                .set(DataComponents.ITEM_NAME, Component.text("Stop", NamedTextColor.RED, TextDecoration.BOLD))
                 .build());
 
-        inventory.addInventoryCondition((player, slot, clickType, inventoryConditionResult) -> {
-            inventoryConditionResult.setCancel(true);
+        inventory.eventNode().addListener(InventoryPreClickEvent.class, e -> {
+            e.setCancelled(true);
 
-            if (inventoryConditionResult.getClickedItem() == ItemStack.AIR) return;
+            if (e.getClickedItem() == ItemStack.AIR) return;
 
-            if (slot == 40) {
-                MusicCommand.stop(player);
+            if (e.getSlot() == 40) {
+                MusicCommand.stop(e.getPlayer());
                 return;
             }
 
-            MusicDisc nowPlayingDisc = MusicDisc.fromMaterial(inventoryConditionResult.getClickedItem().material());
+            MusicDisc nowPlayingDisc = MusicDisc.fromMaterial(e.getClickedItem().material());
 
-            MusicCommand.playDisc(player, nowPlayingDisc.getShortName());
+            MusicCommand.playDisc(e.getPlayer(), nowPlayingDisc.getShortName());
         });
 
         this.inventory = inventory;
