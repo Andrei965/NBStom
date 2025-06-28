@@ -10,6 +10,7 @@ import net.minestom.server.timer.TaskSchedule;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NBS {
@@ -21,16 +22,18 @@ public class NBS {
         final Audience audience;
         final Scheduler scheduler;
         final UUID stopId;
+        final CompletableFuture<Void> onFinishFuture;
 
         Task task;
         int tick = 0;
         int loops = 0;
 
-        NBSPlayer(NBSSong song, Audience audience, Scheduler scheduler, UUID stopId) {
+        NBSPlayer(NBSSong song, Audience audience, Scheduler scheduler, UUID stopId, CompletableFuture<Void> onFinishFuture) {
             this.song = song;
             this.audience = audience;
             this.scheduler = scheduler;
             this.stopId = stopId;
+            this.onFinishFuture = onFinishFuture;
         }
 
         void schedule() {
@@ -45,6 +48,7 @@ public class NBS {
                         this.tick = song.getLoopStart();
                     } else {
                         playingSongs.remove(this.stopId);
+                        this.onFinishFuture.complete(null);
                         return TaskSchedule.stop();
                     }
                 }
@@ -72,34 +76,37 @@ public class NBS {
             if (this.task != null) {
                 this.task.cancel();
             }
+            this.onFinishFuture.cancel(false);
         }
     }
 
-
     /**
-     * Plays this NBS song to an audience
-     * Can be cancelled by using {@link #stop(UUID)} with the player's UUID. This stops automatically when the player leaves.
+     * Plays this NBS song to a player and returns a future that completes when the song is finished.
      *
      * @param player The player to play the song to
+     * @return A {@link CompletableFuture} that completes when the song finishes.
      */
-    public static void play(NBSSong song, Player player) {
-        play(song, player, player.scheduler(), player.getUuid());
+    public static CompletableFuture<Void> play(NBSSong song, Player player) {
+        return play(song, player, player.scheduler(), player.getUuid());
     }
 
     /**
-     * Plays this NBS song to an audience
-     * Can be cancelled by using {@link #stop(UUID)} with the same stopId or by cancelling via the scheduler
+     * Plays this NBS song to an audience and returns a future that completes when the song is finished.
      *
      * @param audience The audience to play the song to
      * @param scheduler The scheduler to tick the song on
      * @param stopId The id for use with {@link #stop(UUID)} later
+     * @return A {@link CompletableFuture} that completes when the song finishes.
      */
-    public static void play(NBSSong song, Audience audience, Scheduler scheduler, UUID stopId) {
+    public static CompletableFuture<Void> play(NBSSong song, Audience audience, Scheduler scheduler, UUID stopId) {
         stop(stopId);
 
-        NBSPlayer nbsPlayer = new NBSPlayer(song, audience, scheduler, stopId);
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        NBSPlayer nbsPlayer = new NBSPlayer(song, audience, scheduler, stopId, future);
         playingSongs.put(stopId, nbsPlayer);
         nbsPlayer.schedule();
+
+        return future;
     }
 
     public static void stop(Player player) {
@@ -111,6 +118,16 @@ public class NBS {
         if (nbsPlayer != null) {
             nbsPlayer.stop();
         }
+    }
+
+    /**
+     * Checks if a song is currently playing for the given ID.
+     *
+     * @param stopId The ID to check.
+     * @return true if a song is playing, false otherwise.
+     */
+    public static boolean isPlaying(UUID stopId) {
+        return playingSongs.containsKey(stopId);
     }
 
     /**
