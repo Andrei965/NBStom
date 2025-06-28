@@ -24,6 +24,7 @@ public class NBS {
 
         Task task;
         int tick = 0;
+        int loops = 0;
 
         NBSPlayer(NBSSong song, Audience audience, Scheduler scheduler, UUID stopId) {
             this.song = song;
@@ -38,9 +39,14 @@ public class NBS {
             }
 
             this.task = this.scheduler.submitTask(() -> {
-                if (tick > song.getLength() + 1) {
-                    playingSongs.remove(this.stopId);
-                    return TaskSchedule.stop();
+                if (tick > song.getLength()) {
+                    if (song.isLoop() && (song.getMaxLoopCount() == 0 || loops < song.getMaxLoopCount())) {
+                        this.loops++;
+                        this.tick = song.getLoopStart();
+                    } else {
+                        playingSongs.remove(this.stopId);
+                        return TaskSchedule.stop();
+                    }
                 }
 
                 List<Sound> sounds = song.getTicks().get(tick);
