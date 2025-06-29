@@ -62,7 +62,13 @@ public class NBS {
 
                 tick++;
 
-                return TaskSchedule.millis((long) (1000.0 / song.getTps()));
+                long delayInTicks = (long) (20.0 / song.getTps());
+
+                if (delayInTicks < 1) {
+                    delayInTicks = 1;
+                }
+
+                return TaskSchedule.tick((int)delayInTicks);
             });
         }
 
